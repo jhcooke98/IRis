@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <!-- IR Remote Icon -->
+  <rect x="8" y="2" width="8" height="18" rx="2" ry="2" fill="#1976d2" stroke="#1976d2"/>
+  <circle cx="12" cy="6" r="1.5" fill="white"/>
+  <rect x="10" y="9" width="4" height="1.5" rx="0.5" fill="white"/>
+  <rect x="10" y="11.5" width="4" height="1.5" rx="0.5" fill="white"/>
+  <rect x="10" y="14" width="4" height="1.5" rx="0.5" fill="white"/>
+  <rect x="10" y="16.5" width="4" height="1.5" rx="0.5" fill="white"/>
+  
+  <!-- IR Signal Lines -->
+  <path d="M6 6 L2 6" stroke="#ff6b35" stroke-width="2" opacity="0.8"/>
+  <path d="M6 8 L3 8" stroke="#ff6b35" stroke-width="2" opacity="0.6"/>
+  <path d="M6 10 L2 10" stroke="#ff6b35" stroke-width="2" opacity="0.4"/>
+  
+  <path d="M18 6 L22 6" stroke="#ff6b35" stroke-width="2" opacity="0.8"/>
+  <path d="M18 8 L21 8" stroke="#ff6b35" stroke-width="2" opacity="0.6"/>
+  <path d="M18 10 L22 10" stroke="#ff6b35" stroke-width="2" opacity="0.4"/>
+</svg>

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.svg" alt="IRis Logo" width="400"/>
+</p>
+
 # IRis IR Remote Integration for Home Assistant
 
 [![GitHub Release][releases-shield]][releases]

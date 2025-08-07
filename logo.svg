@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
+  <!-- Background -->
+  <rect width="200" height="80" fill="#f8f9fa" rx="8"/>
+  
+  <!-- IR Remote Icon -->
+  <rect x="20" y="15" width="25" height="50" rx="4" ry="4" fill="#1976d2" stroke="#1976d2"/>
+  <circle cx="32.5" cy="25" r="3" fill="white"/>
+  <rect x="27" y="32" width="11" height="3" rx="1" fill="white"/>
+  <rect x="27" y="37" width="11" height="3" rx="1" fill="white"/>
+  <rect x="27" y="42" width="11" height="3" rx="1" fill="white"/>
+  <rect x="27" y="47" width="11" height="3" rx="1" fill="white"/>
+  <rect x="27" y="52" width="11" height="3" rx="1" fill="white"/>
+  
+  <!-- IR Signal Lines -->
+  <path d="M15 25 L5 25" stroke="#ff6b35" stroke-width="3" opacity="0.8"/>
+  <path d="M15 30 L8 30" stroke="#ff6b35" stroke-width="3" opacity="0.6"/>
+  <path d="M15 35 L5 35" stroke="#ff6b35" stroke-width="3" opacity="0.4"/>
+  
+  <path d="M50 25 L60 25" stroke="#ff6b35" stroke-width="3" opacity="0.8"/>
+  <path d="M50 30 L57 30" stroke="#ff6b35" stroke-width="3" opacity="0.6"/>
+  <path d="M50 35 L60 35" stroke="#ff6b35" stroke-width="3" opacity="0.4"/>
+  
+  <!-- Text -->
+  <text x="75" y="35" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="#1976d2">IRis</text>
+  <text x="75" y="55" font-family="Arial, sans-serif" font-size="16" fill="#666">IR Remote Integration</text>
+</svg>
