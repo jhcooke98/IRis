@@ -24,6 +24,54 @@ This custom integration allows you to integrate your IRis IR Remote devices with
 - **Web UI Access**: Direct access to device web interfaces
 - **Learning Mode**: Start/stop learning mode remotely
 - **Dual Update Methods**: HTTP polling (fallback) + MQTT real-time (when available)
+- **OTA Firmware Updates**: Automatic Over-The-Air firmware updates with version management
+- **GitHub Firmware Source**: Pull firmware directly from GitHub repositories for centralized management
+
+## OTA Integration
+
+This repository now includes a complete **OTA (Over-The-Air) firmware update integration** for IR Remote Mini devices. The OTA integration provides:
+
+- **Automatic Device Discovery**: Discovers IR Remote devices on your network
+- **Firmware Version Management**: Tracks firmware versions and detects updates
+- **Bulk Update Capabilities**: Update multiple devices simultaneously
+- **Update Notifications**: Alerts when new firmware is available
+- **Progress Monitoring**: Track update status and handle failures
+- **Secure Updates**: OTA password protection and validation
+- **GitHub Integration**: Pull firmware directly from GitHub repositories
+- **Flexible Sources**: Support for both local directories and remote repositories
+
+### OTA Quick Start
+
+1. **Install OTA Integration**: Copy `custom_components/ir_remote_ota/` to your Home Assistant
+2. **Choose Firmware Source**: 
+   - **Local**: Create `/config/ir_remote_firmware/` or use the included `firmware/` directory
+   - **GitHub**: Configure to pull from `github.com/your-username/your-repo`
+3. **Build Firmware**: Use `build_firmware.sh` (Linux/Mac) or `build_firmware.bat` (Windows) to compile and deploy
+4. **Configure Integration**: Add the OTA integration through Home Assistant UI
+5. **Monitor & Update**: Use the dashboard to monitor devices and deploy updates
+
+### GitHub Firmware Source
+
+The integration now supports pulling firmware directly from GitHub repositories:
+
+```yaml
+# Example configuration
+firmware_source_type: github
+github_repo: "jhcooke98/IRis"
+github_path: "firmware"
+auto_download: true
+```
+
+**Benefits:**
+- **Centralized Management**: Single source of truth for firmware
+- **Version Control**: Full git history of firmware changes  
+- **Automatic Updates**: Integration detects new releases automatically
+- **Team Collaboration**: Multiple developers can push updates
+- **CI/CD Integration**: Automatic building via GitHub Actions
+
+For complete GitHub setup instructions, see [GITHUB_FIRMWARE_SETUP.md](GITHUB_FIRMWARE_SETUP.md)
+
+For complete OTA setup and usage instructions, see [OTA_INTEGRATION_README.md](OTA_INTEGRATION_README.md).
 
 ## Installation
 

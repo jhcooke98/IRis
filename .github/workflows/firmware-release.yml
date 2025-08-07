@@ -1,0 +1,166 @@
+# GitHub Actions Workflow for Automatic Firmware Build and Release
+# Place this file in .github/workflows/firmware-release.yml
+
+name: Build and Release IR Remote Firmware
+
+on:
+  push:
+    paths:
+      - 'arduino_project/**'
+      - 'version.txt'
+    branches:
+      - main
+  
+  # Allow manual trigger
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Firmware version (e.g., 1.2.3)'
+        required: true
+        type: string
+
+jobs:
+  build-firmware:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Arduino CLI
+        uses: arduino/setup-arduino-cli@v1
+        
+      - name: Install ESP32 core
+        run: |
+          arduino-cli core update-index
+          arduino-cli core install esp32:esp32
+          
+      - name: Get version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            VERSION="${{ inputs.version }}"
+          else
+            # Get version from version.txt or extract from commit
+            VERSION=$(cat version.txt 2>/dev/null || echo "1.0.0")
+          fi
+          echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building firmware version: $VERSION"
+          
+      - name: Update version in code
+        run: |
+          mkdir -p arduino_project
+          cat > arduino_project/version.h << EOF
+          #ifndef VERSION_H
+          #define VERSION_H
+          #define FIRMWARE_VERSION "${{ steps.version.outputs.VERSION }}"
+          #endif
+          EOF
+          
+      - name: Build firmware
+        run: |
+          # Find the main sketch file
+          SKETCH_FILE=$(find arduino_project -name "*.ino" | head -1)
+          if [ -z "$SKETCH_FILE" ]; then
+            echo "No .ino file found in arduino_project directory"
+            exit 1
+          fi
+          
+          echo "Building sketch: $SKETCH_FILE"
+          arduino-cli compile --fqbn esp32:esp32:esp32 "$SKETCH_FILE" --output-dir build/
+          
+      - name: Prepare firmware for release
+        run: |
+          mkdir -p firmware
+          # Find the compiled binary
+          BINARY_FILE=$(find build -name "*.bin" | head -1)
+          if [ -z "$BINARY_FILE" ]; then
+            echo "No .bin file found in build directory"
+            exit 1
+          fi
+          
+          # Copy with version naming
+          FIRMWARE_NAME="ir_remote_v${{ steps.version.outputs.VERSION }}.bin"
+          cp "$BINARY_FILE" "firmware/$FIRMWARE_NAME"
+          
+          # Create latest symlink
+          cd firmware
+          ln -sf "$FIRMWARE_NAME" "latest.bin"
+          
+          echo "Created firmware: firmware/$FIRMWARE_NAME"
+          echo "File size: $(stat -c%s firmware/$FIRMWARE_NAME) bytes"
+          
+      - name: Commit firmware to repository
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          
+          git add firmware/
+          git add version.txt
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Release firmware v${{ steps.version.outputs.VERSION }}"
+            git push
+          fi
+          
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.version.outputs.VERSION }}
+          release_name: Firmware Release v${{ steps.version.outputs.VERSION }}
+          body: |
+            ## IR Remote Mini Firmware v${{ steps.version.outputs.VERSION }}
+            
+            ### Changes
+            - Automatic build from latest code
+            - Compatible with Home Assistant OTA integration
+            
+            ### Installation
+            1. Download the firmware file below
+            2. Use Home Assistant OTA integration for automatic deployment
+            3. Or manually upload via device web interface
+            
+            ### File Information
+            - **File**: `ir_remote_v${{ steps.version.outputs.VERSION }}.bin`
+            - **Target**: ESP32 IR Remote Mini devices
+            - **Build Date**: ${{ github.event.head_commit.timestamp }}
+            - **Commit**: ${{ github.sha }}
+          draft: false
+          prerelease: false
+          
+      - name: Upload firmware as release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: firmware/ir_remote_v${{ steps.version.outputs.VERSION }}.bin
+          asset_name: ir_remote_v${{ steps.version.outputs.VERSION }}.bin
+          asset_content_type: application/octet-stream
+          
+      - name: Notify Home Assistant (Optional)
+        if: env.HOME_ASSISTANT_URL != ''
+        run: |
+          # Optional: Trigger Home Assistant automation when new firmware is available
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.HOME_ASSISTANT_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"entity_id": "automation.ir_remote_firmware_released"}' \
+            "${{ env.HOME_ASSISTANT_URL }}/api/services/automation/trigger"
+        env:
+          HOME_ASSISTANT_URL: ${{ secrets.HOME_ASSISTANT_URL }}
+          
+  notify-deployment:
+    needs: build-firmware
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+      - name: Notify successful deployment
+        run: |
+          echo "✅ Firmware v${{ needs.build-firmware.outputs.version }} successfully built and released!"
+          echo "🏠 Home Assistant users with GitHub source configured will be automatically notified of the update."

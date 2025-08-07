@@ -1,0 +1,11 @@
+# Example firmware file - replace with actual compiled firmware
+# This is just a placeholder file to demonstrate the naming convention
+
+# To create actual firmware:
+# 1. Open your Arduino IDE with your IR Remote Mini project
+# 2. Go to Sketch -> Export Compiled Binary
+# 3. Rename the .bin file using the version convention
+# 4. Copy it to this directory
+
+# Version: 1.0.0
+# Placeholder content

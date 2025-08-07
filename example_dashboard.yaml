@@ -1,0 +1,265 @@
+# Example Lovelace dashboard configuration for IR Remote OTA integration
+
+# Main IR Remote OTA Dashboard
+title: IR Remote OTA Management
+path: ir-remote-ota
+icon: mdi:remote
+cards:
+
+  # Overview Section
+  - type: horizontal-stack
+    cards:
+      - type: entity
+        entity: sensor.ir_remote_device_count
+        name: "Total Devices"
+        icon: mdi:counter
+        
+      - type: entity
+        entity: sensor.ir_remote_latest_firmware
+        name: "Latest Firmware"
+        icon: mdi:package-down
+        
+      - type: entity
+        entity: sensor.ir_remote_updates_available
+        name: "Updates Available"
+        icon: mdi:update
+        state_color: true
+
+  # Quick Actions
+  - type: horizontal-stack
+    cards:
+      - type: button
+        name: "Check Updates"
+        icon: mdi:refresh
+        tap_action:
+          action: call-service
+          service: ir_remote_ota.check_updates
+        
+      - type: button
+        name: "Update All"
+        icon: mdi:upload
+        tap_action:
+          action: call-service
+          service: ir_remote_ota.update_all_devices
+        hold_action:
+          action: more-info
+        
+      - type: button
+        name: "Enable All OTA"
+        icon: mdi:upload-outline
+        tap_action:
+          action: call-service
+          service: script.enable_all_ir_remote_ota  # You'd need to create this script
+
+  # Device List
+  - type: entities
+    title: "IR Remote Devices"
+    entities:
+      # Living Room Device
+      - type: section
+        label: "Living Room IR Remote"
+      - entity: binary_sensor.living_room_ir_connectivity
+        name: "Status"
+        icon: mdi:wifi
+      - entity: sensor.living_room_ir_firmware_version
+        name: "Firmware Version"
+      - entity: binary_sensor.living_room_ir_update_available
+        name: "Update Available"
+      - entity: switch.living_room_ir_ota_enabled
+        name: "OTA Enabled"
+      - entity: sensor.living_room_ir_update_state
+        name: "Update State"
+      
+      # Bedroom Device
+      - type: section
+        label: "Bedroom IR Remote"
+      - entity: binary_sensor.bedroom_ir_connectivity
+        name: "Status"
+        icon: mdi:wifi
+      - entity: sensor.bedroom_ir_firmware_version
+        name: "Firmware Version"
+      - entity: binary_sensor.bedroom_ir_update_available
+        name: "Update Available"
+      - entity: switch.bedroom_ir_ota_enabled
+        name: "OTA Enabled"
+      - entity: sensor.bedroom_ir_update_state
+        name: "Update State"
+
+  # Device Status Grid
+  - type: grid
+    columns: 3
+    square: false
+    cards:
+      - type: entity
+        entity: binary_sensor.living_room_ir_connectivity
+        name: "Living Room"
+        icon: mdi:remote
+        state_color: true
+        tap_action:
+          action: more-info
+        
+      - type: entity
+        entity: binary_sensor.bedroom_ir_connectivity
+        name: "Bedroom" 
+        icon: mdi:remote
+        state_color: true
+        tap_action:
+          action: more-info
+        
+      - type: entity
+        entity: binary_sensor.office_ir_connectivity
+        name: "Office"
+        icon: mdi:remote
+        state_color: true
+        tap_action:
+          action: more-info
+
+  # Update Status Chart
+  - type: history-graph
+    title: "Device Connectivity"
+    hours_to_show: 24
+    refresh_interval: 300
+    entities:
+      - entity: binary_sensor.living_room_ir_connectivity
+        name: "Living Room"
+      - entity: binary_sensor.bedroom_ir_connectivity
+        name: "Bedroom"
+      - entity: binary_sensor.office_ir_connectivity
+        name: "Office"
+
+  # Memory Usage
+  - type: entities
+    title: "Device Memory Status"
+    entities:
+      - entity: sensor.living_room_ir_free_memory
+        name: "Living Room - Free Memory"
+        icon: mdi:memory
+      - entity: sensor.bedroom_ir_free_memory
+        name: "Bedroom - Free Memory"
+        icon: mdi:memory
+      - entity: sensor.office_ir_free_memory
+        name: "Office - Free Memory"
+        icon: mdi:memory
+
+  # Individual Device Update Cards
+  - type: horizontal-stack
+    cards:
+      # Living Room Update Card
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.living_room_ir_update_available
+            state: "on"
+        card:
+          type: entity
+          entity: binary_sensor.living_room_ir_update_available
+          name: "Living Room Update"
+          icon: mdi:download
+          tap_action:
+            action: call-service
+            service: ir_remote_ota.update_device
+            service_data:
+              device_id: "{{ state_attr('sensor.living_room_ir_status', 'mac_address') }}"
+          
+      # Bedroom Update Card
+      - type: conditional
+        conditions:
+          - entity: binary_sensor.bedroom_ir_update_available
+            state: "on"
+        card:
+          type: entity
+          entity: binary_sensor.bedroom_ir_update_available
+          name: "Bedroom Update"
+          icon: mdi:download
+          tap_action:
+            action: call-service
+            service: ir_remote_ota.update_device
+            service_data:
+              device_id: "{{ state_attr('sensor.bedroom_ir_status', 'mac_address') }}"
+
+# Compact Device Overview Card (for main dashboard)
+compact_ir_remote_card:
+  type: entities
+  title: "IR Remote Status"
+  show_header_toggle: false
+  entities:
+    - entity: sensor.ir_remote_device_count
+      name: "Devices"
+      icon: mdi:remote
+    - entity: sensor.ir_remote_updates_available
+      name: "Updates Available"
+      icon: mdi:update
+      tap_action:
+        action: navigate
+        navigation_path: /lovelace/ir-remote-ota
+    - type: conditional
+      conditions:
+        - entity: sensor.ir_remote_updates_available
+          state_not: "0"
+      row:
+        type: button
+        name: "Update All Devices"
+        icon: mdi:upload
+        action_name: "UPDATE"
+        tap_action:
+          action: call-service
+          service: ir_remote_ota.update_all_devices
+
+# Device Detail Popup Card (use with browser_mod)
+device_detail_popup:
+  type: entities
+  title: "{{ device_name }} Details"
+  entities:
+    - entity: "sensor.{{ device_id }}_firmware_version"
+      name: "Firmware Version"
+    - entity: "binary_sensor.{{ device_id }}_connectivity"
+      name: "Connectivity"
+    - entity: "sensor.{{ device_id }}_free_memory"
+      name: "Free Memory"
+    - entity: "sensor.{{ device_id }}_uptime"
+      name: "Last Seen"
+    - entity: "switch.{{ device_id }}_ota_enabled"
+      name: "OTA Enabled"
+    - entity: "binary_sensor.{{ device_id }}_update_available"
+      name: "Update Available"
+    - entity: "sensor.{{ device_id }}_update_state"
+      name: "Update State"
+  footer:
+    type: buttons
+    entities:
+      - entity: "button.update_{{ device_id }}"
+        name: "Update Device"
+        tap_action:
+          action: call-service
+          service: ir_remote_ota.update_device
+          service_data:
+            device_id: "{{ device_id }}"
+
+# Mini update status bar (for header/footer)
+update_status_bar:
+  type: conditional
+  conditions:
+    - entity: sensor.ir_remote_updates_available
+      state_not: "0"
+  card:
+    type: horizontal-stack
+    cards:
+      - type: markdown
+        content: |
+          🔄 **{{ states('sensor.ir_remote_updates_available') }} IR Remote update(s) available**
+        card_mod:
+          style: |
+            ha-card {
+              background: var(--warning-color);
+              color: white;
+              font-weight: bold;
+            }
+      - type: button
+        icon: mdi:upload
+        tap_action:
+          action: call-service
+          service: ir_remote_ota.update_all_devices
+        card_mod:
+          style: |
+            ha-card {
+              background: var(--success-color);
+            }

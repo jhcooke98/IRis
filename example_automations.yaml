@@ -1,0 +1,259 @@
+# Example Home Assistant automations for IR Remote OTA integration
+
+# 1. Daily update check at 2 AM
+automation ir_remote_daily_update_check:
+  alias: "IR Remote Daily Update Check"
+  description: "Check for firmware updates every day at 2 AM"
+  trigger:
+    - platform: time
+      at: "02:00:00"
+  action:
+    # Sync from GitHub if using GitHub source
+    - service: ir_remote_ota.sync_github_firmware
+    # Then check for updates
+    - service: ir_remote_ota.check_updates
+    - service: system_log.write
+      data:
+        message: "IR Remote OTA: Daily update check completed"
+        level: info
+
+# 2. Notification when updates are available
+automation ir_remote_update_notification:
+  alias: "IR Remote Update Available Notification"
+  description: "Notify when firmware updates are available"
+  trigger:
+    - platform: state
+      entity_id: sensor.ir_remote_updates_available
+      from: "0"
+  condition:
+    - condition: template
+      value_template: "{{ states('sensor.ir_remote_updates_available') | int > 0 }}"
+  action:
+    - service: notify.persistent_notification
+      data:
+        title: "🔄 IR Remote Updates Available"
+        message: >
+          {{ states('sensor.ir_remote_updates_available') }} device(s) have firmware updates available.
+          Latest version: {{ states('sensor.ir_remote_latest_firmware') }}
+          
+          Devices with updates:
+          {% for device in state_attr('sensor.ir_remote_updates_available', 'devices_with_updates') %}
+          - {{ device }}
+          {% endfor %}
+    
+    # Optional: Send mobile notification
+    # - service: notify.mobile_app_your_phone
+    #   data:
+    #     title: "IR Remote Updates Available"
+    #     message: "{{ states('sensor.ir_remote_updates_available') }} device(s) need updates"
+
+# 3. Scheduled maintenance updates (Sunday 3 AM)
+automation ir_remote_maintenance_updates:
+  alias: "IR Remote Weekly Maintenance Updates"
+  description: "Automatically update all devices during maintenance window"
+  trigger:
+    - platform: time
+      at: "03:00:00"
+  condition:
+    - condition: time
+      weekday:
+        - sun  # Sunday only
+    - condition: template
+      value_template: "{{ states('sensor.ir_remote_updates_available') | int > 0 }}"
+  action:
+    - service: notify.persistent_notification
+      data:
+        title: "🔄 Starting IR Remote Maintenance"
+        message: "Beginning automatic firmware updates for {{ states('sensor.ir_remote_updates_available') }} device(s)"
+    
+    - service: ir_remote_ota.update_all_devices
+      data:
+        # Optionally exclude specific devices
+        # exclude_devices: ["a1b2c3d4e5f6"]
+    
+    - delay: "00:10:00"  # Wait 10 minutes for updates to complete
+    
+    - service: notify.persistent_notification
+      data:
+        title: "✅ IR Remote Maintenance Complete"
+        message: "Weekly firmware updates completed. Check device status for results."
+
+# 4. Update failure notification
+automation ir_remote_update_failed:
+  alias: "IR Remote Update Failed Alert"
+  description: "Alert when device update fails"
+  trigger:
+    - platform: state
+      entity_id:
+        # Add your device update state sensors here
+        - sensor.living_room_ir_update_state
+        - sensor.bedroom_ir_update_state
+        - sensor.office_ir_update_state
+      to: "failed"
+  action:
+    - service: notify.persistent_notification
+      data:
+        title: "❌ IR Remote Update Failed"
+        message: >
+          Device {{ trigger.to_state.attributes.friendly_name }} failed to update firmware.
+          Current state: {{ trigger.to_state.state }}
+          Please check device connectivity and try again.
+    
+    # Optional: Send critical mobile notification
+    # - service: notify.mobile_app_your_phone
+    #   data:
+    #     title: "IR Remote Update Failed"
+    #     message: "{{ trigger.to_state.attributes.friendly_name }} update failed"
+    #     data:
+    #       priority: high
+
+# 5. Device offline alert
+automation ir_remote_device_offline:
+  alias: "IR Remote Device Offline Alert"
+  description: "Alert when IR Remote device goes offline"
+  trigger:
+    - platform: state
+      entity_id:
+        # Add your device connectivity sensors here
+        - binary_sensor.living_room_ir_connectivity
+        - binary_sensor.bedroom_ir_connectivity
+        - binary_sensor.office_ir_connectivity
+      to: "off"
+      for: "00:05:00"  # Offline for 5 minutes
+  action:
+    - service: notify.persistent_notification
+      data:
+        title: "⚠️ IR Remote Device Offline"
+        message: >
+          Device {{ trigger.to_state.attributes.friendly_name }} has been offline for 5 minutes.
+          Last seen: {{ trigger.to_state.attributes.last_seen }}
+
+# 6. New device discovered notification
+automation ir_remote_new_device:
+  alias: "IR Remote New Device Discovered"
+  description: "Notify when a new IR Remote device is discovered"
+  trigger:
+    - platform: state
+      entity_id: sensor.ir_remote_device_count
+  condition:
+    - condition: template
+      value_template: "{{ trigger.to_state.state | int > trigger.from_state.state | int }}"
+  action:
+    - service: notify.persistent_notification
+      data:
+        title: "🆕 New IR Remote Device Discovered"
+        message: >
+          A new IR Remote device has been discovered on your network.
+          Total devices: {{ states('sensor.ir_remote_device_count') }}
+
+# 7. Enable OTA on all devices at startup
+automation ir_remote_enable_ota_startup:
+  alias: "IR Remote Enable OTA on Startup"
+  description: "Ensure OTA is enabled on all devices after Home Assistant restart"
+  trigger:
+    - platform: homeassistant
+      event: start
+  action:
+    - delay: "00:02:00"  # Wait for integration to initialize
+    - repeat:
+        for_each: >
+          {% set ns = namespace(devices=[]) %}
+          {% for state in states.switch %}
+            {% if state.entity_id.endswith('_ota_enabled') and 'ir_remote_ota' in state.entity_id %}
+              {% set ns.devices = ns.devices + [state.entity_id] %}
+            {% endif %}
+          {% endfor %}
+          {{ ns.devices }}
+        sequence:
+          - condition: template
+            value_template: "{{ states(repeat.item) == 'off' }}"
+          - service: switch.turn_on
+            target:
+              entity_id: "{{ repeat.item }}"
+
+# 8. Low memory warning
+automation ir_remote_low_memory:
+  alias: "IR Remote Low Memory Warning"
+  description: "Alert when device memory is low"
+  trigger:
+    - platform: numeric_state
+      entity_id:
+        # Add your device memory sensors here
+        - sensor.living_room_ir_free_memory
+        - sensor.bedroom_ir_free_memory
+        - sensor.office_ir_free_memory
+      below: 10000  # Less than 10KB free
+      for: "00:05:00"
+  action:
+    - service: notify.persistent_notification
+      data:
+        title: "⚠️ IR Remote Low Memory"
+        message: >
+          Device {{ trigger.to_state.attributes.friendly_name }} is low on memory.
+          Free memory: {{ trigger.to_state.state }} bytes
+          Consider restarting the device or checking for memory leaks.
+
+# 9. Firmware version mismatch detection
+automation ir_remote_version_mismatch:
+  alias: "IR Remote Firmware Version Mismatch"
+  description: "Detect when devices have different firmware versions"
+  trigger:
+    - platform: state
+      entity_id:
+        # Add your device firmware version sensors here
+        - sensor.living_room_ir_firmware_version
+        - sensor.bedroom_ir_firmware_version
+        - sensor.office_ir_firmware_version
+  condition:
+    - condition: template
+      value_template: >
+        {% set versions = [] %}
+        {% for state in states.sensor %}
+          {% if state.entity_id.endswith('_firmware_version') and 'ir_remote' in state.entity_id %}
+            {% set versions = versions + [state.state] %}
+          {% endif %}
+        {% endfor %}
+        {{ versions | unique | list | length > 1 }}
+  action:
+    - service: notify.persistent_notification
+      data:
+        title: "📊 IR Remote Version Mismatch Detected"
+        message: >
+          Not all IR Remote devices are running the same firmware version.
+          Consider updating all devices to maintain consistency.
+
+# 10. Update progress monitoring
+automation ir_remote_update_progress:
+  alias: "IR Remote Update Progress Monitoring"
+  description: "Monitor and log update progress"
+  trigger:
+    - platform: state
+      entity_id:
+        # Add your device update state sensors here
+        - sensor.living_room_ir_update_state
+        - sensor.bedroom_ir_update_state
+        - sensor.office_ir_update_state
+  action:
+    - choose:
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.to_state.state == 'installing' }}"
+          sequence:
+            - service: system_log.write
+              data:
+                message: "IR Remote OTA: {{ trigger.to_state.attributes.friendly_name }} is installing firmware update"
+                level: info
+        
+        - conditions:
+            - condition: template
+              value_template: "{{ trigger.to_state.state == 'success' }}"
+          sequence:
+            - service: notify.persistent_notification
+              data:
+                title: "✅ IR Remote Update Successful"
+                message: "{{ trigger.to_state.attributes.friendly_name }} successfully updated firmware"
+            
+            - service: system_log.write
+              data:
+                message: "IR Remote OTA: {{ trigger.to_state.attributes.friendly_name }} successfully updated"
+                level: info

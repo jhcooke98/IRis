@@ -1,0 +1,51 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "IR Remote OTA Setup",
+        "description": "Configure the IR Remote OTA integration",
+        "data": {
+          "scan_interval": "Device scan interval (seconds)",
+          "network_range": "Network range to scan (CIDR notation)",
+          "firmware_source_type": "Firmware source type",
+          "firmware_path": "Local firmware directory path",
+          "github_repo": "GitHub repository (owner/repo)",
+          "github_path": "Path in repository to firmware files",
+          "github_token": "GitHub personal access token (optional, for private repos)",
+          "auto_download": "Automatically download firmware from GitHub",
+          "auto_discovery": "Enable automatic device discovery",
+          "update_check_interval": "Update check interval (seconds)",
+          "ota_password": "OTA password for devices"
+        }
+      }
+    },
+    "error": {
+      "invalid_path": "Firmware path must be an absolute path starting with /",
+      "invalid_repo": "GitHub repository must be in format 'owner/repo'"
+    },
+    "abort": {
+      "already_configured": "IR Remote OTA is already configured"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "IR Remote OTA Options",
+        "description": "Configure IR Remote OTA options",
+        "data": {
+          "scan_interval": "Device scan interval (seconds)",
+          "network_range": "Network range to scan (CIDR notation)",
+          "firmware_source_type": "Firmware source type",
+          "firmware_path": "Local firmware directory path",
+          "github_repo": "GitHub repository (owner/repo)",
+          "github_path": "Path in repository to firmware files",
+          "github_token": "GitHub personal access token (optional, for private repos)",
+          "auto_download": "Automatically download firmware from GitHub",
+          "auto_discovery": "Enable automatic device discovery",
+          "update_check_interval": "Update check interval (seconds)",
+          "ota_password": "OTA password for devices"
+        }
+      }
+    }
+  }
+}

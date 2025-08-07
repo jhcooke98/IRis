@@ -1,0 +1,85 @@
+update_device:
+  name: Update IR Remote Device
+  description: Update firmware on a specific IR Remote device
+  fields:
+    device_id:
+      name: Device ID
+      description: The device identifier (MAC address)
+      required: true
+      example: "a1b2c3d4e5f6"
+      selector:
+        text:
+    firmware_file:
+      name: Firmware File
+      description: Path to firmware .bin file (optional, uses latest if not specified)
+      required: false
+      example: "/config/ir_remote_firmware/ir_remote_v2.0.0.bin"
+      selector:
+        text:
+    force_update:
+      name: Force Update
+      description: Force update even if version is the same
+      required: false
+      default: false
+      selector:
+        boolean:
+
+update_all_devices:
+  name: Update All IR Remote Devices
+  description: Update firmware on all discovered devices
+  fields:
+    firmware_file:
+      name: Firmware File
+      description: Path to firmware .bin file (optional, uses latest if not specified)
+      required: false
+      example: "/config/ir_remote_firmware/ir_remote_v2.0.0.bin"
+      selector:
+        text:
+    exclude_devices:
+      name: Exclude Devices
+      description: List of device IDs to exclude from update
+      required: false
+      example: ["a1b2c3d4e5f6", "b2c3d4e5f6a1"]
+      selector:
+        object:
+    force_update:
+      name: Force Update
+      description: Force update even if version is the same
+      required: false
+      default: false
+      selector:
+        boolean:
+
+check_updates:
+  name: Check for Updates
+  description: Check for available firmware updates
+  fields: {}
+
+enable_ota:
+  name: Enable OTA
+  description: Enable OTA updates on a device
+  fields:
+    device_id:
+      name: Device ID
+      description: The device identifier (MAC address)
+      required: true
+      example: "a1b2c3d4e5f6"
+      selector:
+        text:
+
+disable_ota:
+  name: Disable OTA
+  description: Disable OTA updates on a device
+  fields:
+    device_id:
+      name: Device ID
+      description: The device identifier (MAC address)
+      required: true
+      example: "a1b2c3d4e5f6"
+      selector:
+        text:
+
+sync_github_firmware:
+  name: Sync GitHub Firmware
+  description: Manually sync firmware from GitHub repository
+  fields: {}
