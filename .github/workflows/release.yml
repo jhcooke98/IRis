@@ -1,0 +1,36 @@
+name: "Release"
+
+on:
+  release:
+    types:
+      - "published"
+
+jobs:
+  release:
+    name: "Release"
+    runs-on: "ubuntu-latest"
+    steps:
+      - name: "Checkout the repository"
+        uses: "actions/checkout@v4"
+
+      - name: "Adjust version number"
+        shell: "bash"
+        run: |
+          yq -i -o json '.version="${{ github.event.release.tag_name }}"' \
+            "${{ github.workspace }}/custom_components/iris_ir_remote/manifest.json"
+
+      - name: "ZIP the integration directory"
+        shell: "bash"
+        run: |
+          cd "${{ github.workspace }}/custom_components/iris_ir_remote"
+          zip iris_ir_remote.zip -r ./
+
+      - name: "Upload the ZIP file to the release"
+        uses: "actions/upload-release-asset@v1"
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        with:
+          upload_url: "${{ github.event.release.upload_url }}"
+          asset_path: "${{ github.workspace }}/custom_components/iris_ir_remote/iris_ir_remote.zip"
+          asset_name: "iris_ir_remote.zip"
+          asset_content_type: "application/zip"

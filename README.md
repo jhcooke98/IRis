@@ -1,5 +1,12 @@
 # IRis IR Remote Integration for Home Assistant
 
+[![GitHub Release][releases-shield]][releases]
+[![GitHub Activity][commits-shield]][commits]
+[![License][license-shield]](LICENSE)
+
+[![HACS][hacsbadge]][hacs]
+[![Project Maintenance][maintenance-shield]][user_profile]
+
 This custom integration allows you to integrate your IRis IR Remote devices with Home Assistant. You can add multiple devices by IP address, monitor their status, send IR commands, and access their web interfaces directly from Home Assistant.
 
 ## Features
@@ -16,31 +23,26 @@ This custom integration allows you to integrate your IRis IR Remote devices with
 
 ## Installation
 
+### HACS (Recommended)
+
+1. Open HACS in your Home Assistant instance
+2. Go to "Integrations"
+3. Click the three dots in the top right corner and select "Custom repositories"
+4. Add this repository URL: `https://github.com/jhcooke98/IRis`
+5. Select "Integration" as the category
+6. Click "Add"
+7. Find "IRis IR Remote Integration" in the list and install it
+8. Restart Home Assistant
+
 ### Manual Installation
 
-1. Copy the `iris_ir_remote` folder to your Home Assistant `custom_components` directory:
-   ```
-   config/
-   └── custom_components/
-       └── iris_ir_remote/
-           ├── __init__.py
-           ├── manifest.json
-           ├── config_flow.py
-           ├── const.py
-           ├── coordinator.py
-           ├── remote.py
-           ├── sensor.py
-           ├── binary_sensor.py
-           ├── services.py
-           ├── services.yaml
-           └── strings.json
-   ```
-
-2. Restart Home Assistant
-
-3. Go to Configuration → Integrations → Add Integration
-
-4. Search for "IRis IR Remote Integration"
+1. Using the tool of choice open the directory (folder) for your HA configuration (where you find `configuration.yaml`)
+2. If you do not have a `custom_components` directory (folder) there, you need to create it
+3. In the `custom_components` directory (folder) create a new folder called `iris_ir_remote`
+4. Download _all_ the files from the `custom_components/iris_ir_remote/` directory (folder) in this repository
+5. Place the files you downloaded in the new directory (folder) you created
+6. Restart Home Assistant
+7. In the HA UI go to "Configuration" -> "Integrations" click "+" and search for "IRis IR Remote Integration"
 
 ## Configuration
 
@@ -361,3 +363,15 @@ For issues, feature requests, or contributions, please visit the GitHub reposito
 ## License
 
 This integration is provided under the MIT License.
+
+---
+
+[releases-shield]: https://img.shields.io/github/release/jhcooke98/IRis.svg?style=for-the-badge
+[releases]: https://github.com/jhcooke98/IRis/releases
+[commits-shield]: https://img.shields.io/github/commit-activity/y/jhcooke98/IRis.svg?style=for-the-badge
+[commits]: https://github.com/jhcooke98/IRis/commits/main
+[hacs]: https://github.com/hacs/integration
+[hacsbadge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
+[license-shield]: https://img.shields.io/github/license/jhcooke98/IRis.svg?style=for-the-badge
+[maintenance-shield]: https://img.shields.io/badge/maintainer-%40jhcooke98-blue.svg?style=for-the-badge
+[user_profile]: https://github.com/jhcooke98

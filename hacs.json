@@ -1,0 +1,9 @@
+{
+  "name": "IRis IR Remote Integration",
+  "content_in_root": false,
+  "filename": "iris_ir_remote",
+  "country": [],
+  "homeassistant": "2023.7.0",
+  "render_readme": true,
+  "iot_class": "Local Push"
+}
