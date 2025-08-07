@@ -164,9 +164,30 @@ class IRisIndividualRemote(CoordinatorEntity, RemoteEntity):
             for button in buttons:
                 name = button.get("name")
                 if name:
+                    # Convert command and address to integers, handling both int and string inputs
+                    try:
+                        command = button.get('command', 0)
+                        if isinstance(command, str):
+                            # Handle hex strings like "0x1A" or decimal strings like "26"
+                            command = int(command, 0) if command.startswith('0x') else int(command)
+                        else:
+                            command = int(command)
+                    except (ValueError, TypeError):
+                        command = 0
+                    
+                    try:
+                        address = button.get('address', 0)
+                        if isinstance(address, str):
+                            # Handle hex strings like "0x1A" or decimal strings like "26"
+                            address = int(address, 0) if address.startswith('0x') else int(address)
+                        else:
+                            address = int(address)
+                    except (ValueError, TypeError):
+                        address = 0
+                    
                     button_details[name] = {
-                        "command": f"0x{button.get('command', 0):02X}",
-                        "address": f"0x{button.get('address', 0):02X}",
+                        "command": f"0x{command:02X}",
+                        "address": f"0x{address:02X}",
                     }
             
             attributes["button_details"] = button_details

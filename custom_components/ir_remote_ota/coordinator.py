@@ -124,6 +124,7 @@ class IRRemoteOTACoordinator(DataUpdateCoordinator):
         self.devices: dict[str, DeviceInfo] = {}
         self.firmware_versions: dict[str, str] = {}
         self._discovery_running = False
+        self._shutdown = False
         self.github_manager: GitHubFirmwareManager | None = None
 
         # Initialize GitHub manager if using GitHub source
@@ -147,6 +148,12 @@ class IRRemoteOTACoordinator(DataUpdateCoordinator):
 
     async def _async_update_data(self) -> dict[str, Any]:
         """Update data."""
+        if self._shutdown:
+            return {
+                "devices": {},
+                "firmware_versions": {},
+            }
+            
         await self.async_update_device_status()
         await self.async_check_firmware_updates()
         return {
@@ -156,7 +163,7 @@ class IRRemoteOTACoordinator(DataUpdateCoordinator):
 
     async def async_discover_devices(self) -> None:
         """Discover IR Remote devices on the network."""
-        if self._discovery_running:
+        if self._discovery_running or self._shutdown:
             return
 
         self._discovery_running = True
@@ -164,12 +171,13 @@ class IRRemoteOTACoordinator(DataUpdateCoordinator):
 
         try:
             # Auto discovery via mDNS
-            if self.entry.options.get(CONF_AUTO_DISCOVERY, True):
+            if self.entry.options.get(CONF_AUTO_DISCOVERY, True) and not self._shutdown:
                 await self._discover_mdns_devices()
 
             # Network scanning
-            network_range = self.entry.options.get(CONF_NETWORK_RANGE, "192.168.1.0/24")
-            await self._scan_network_range(network_range)
+            if not self._shutdown:
+                network_range = self.entry.options.get(CONF_NETWORK_RANGE, "192.168.1.0/24")
+                await self._scan_network_range(network_range)
 
         except Exception as err:
             _LOGGER.error("Error during device discovery: %s", err)
@@ -179,38 +187,62 @@ class IRRemoteOTACoordinator(DataUpdateCoordinator):
     async def _discover_mdns_devices(self) -> None:
         """Discover devices using mDNS."""
         _LOGGER.debug("Discovering devices via mDNS")
+        
+        aiozc = None
+        browser = None
 
         try:
-            aiozc = AsyncZeroconf()
-            zc = aiozc.zeroconf
+            # Use a shorter timeout to avoid hanging
+            async with asyncio.timeout(10):
+                aiozc = AsyncZeroconf()
+                zc = aiozc.zeroconf
 
-            class IRRemoteListener(ServiceListener):
-                def __init__(self, coordinator):
-                    self.coordinator = coordinator
+                class IRRemoteListener(ServiceListener):
+                    def __init__(self, coordinator):
+                        self.coordinator = coordinator
 
-                def remove_service(self, zc, type_, name):
-                    pass
+                    def remove_service(self, zc, type_, name):
+                        pass
 
-                def add_service(self, zc, type_, name):
-                    info = zc.get_service_info(type_, name)
-                    if info and DEVICE_NAME_PREFIX.lower() in name.lower():
-                        ip = str(ipaddress.IPv4Address(info.addresses[0]))
-                        asyncio.create_task(self.coordinator._check_device(ip))
+                    def add_service(self, zc, type_, name):
+                        try:
+                            # Check if coordinator is shutting down
+                            if self.coordinator._shutdown:
+                                return
+                                
+                            # Check if zeroconf is still running
+                            if not zc.done:
+                                info = zc.get_service_info(type_, name)
+                                if info and DEVICE_NAME_PREFIX.lower() in name.lower():
+                                    if info.addresses:
+                                        ip = str(ipaddress.IPv4Address(info.addresses[0]))
+                                        if not self.coordinator._shutdown:
+                                            asyncio.create_task(self.coordinator._check_device(ip))
+                        except Exception as err:
+                            _LOGGER.debug("Error in mDNS service handler: %s", err)
 
-                def update_service(self, zc, type_, name):
-                    self.add_service(zc, type_, name)
+                    def update_service(self, zc, type_, name):
+                        self.add_service(zc, type_, name)
 
-            listener = IRRemoteListener(self)
-            browser = ServiceBrowser(zc, MDNS_TYPE, listener)
+                listener = IRRemoteListener(self)
+                browser = ServiceBrowser(zc, MDNS_TYPE, listener)
 
-            # Let it run for a few seconds
-            await asyncio.sleep(5)
+                # Let it run for a few seconds
+                await asyncio.sleep(5)
 
-            browser.cancel()
-            await aiozc.async_close()
-
+        except asyncio.TimeoutError:
+            _LOGGER.debug("mDNS discovery timed out")
         except Exception as err:
             _LOGGER.warning("mDNS discovery failed: %s", err)
+        finally:
+            # Clean up resources
+            try:
+                if browser:
+                    browser.cancel()
+                if aiozc:
+                    await aiozc.async_close()
+            except Exception as err:
+                _LOGGER.debug("Error cleaning up mDNS resources: %s", err)
 
     async def _scan_network_range(self, network_range: str) -> None:
         """Scan network range for devices."""
@@ -621,3 +653,8 @@ class IRRemoteOTACoordinator(DataUpdateCoordinator):
     async def async_shutdown(self) -> None:
         """Shutdown coordinator."""
         _LOGGER.debug("Shutting down IR Remote OTA coordinator")
+        self._shutdown = True
+        
+        # Wait for discovery to complete if running
+        while self._discovery_running:
+            await asyncio.sleep(0.1)
