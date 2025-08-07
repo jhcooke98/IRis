@@ -1,0 +1,41 @@
+send_button:
+  name: Send Button Command
+  description: Send a button command to the IRis IR Remote device
+  target:
+    entity:
+      domain: remote
+  fields:
+    button:
+      name: Button Name
+      description: Name of the button to send
+      required: true
+      selector:
+        text:
+
+start_learning:
+  name: Start Learning Mode
+  description: Start learning mode on the IRis IR Remote device
+  target:
+    entity:
+      domain: remote
+
+stop_learning:
+  name: Stop Learning Mode
+  description: Stop learning mode on the IRis IR Remote device
+  target:
+    entity:
+      domain: remote
+
+restart_device:
+  name: Restart Device
+  description: Restart the IRis IR Remote device
+  target:
+    entity:
+      domain: remote
+
+open_web_ui:
+  name: Open Web UI
+  description: Open the device's web interface
+  target:
+    entity:
+      domain: remote

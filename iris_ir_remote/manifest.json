@@ -1,0 +1,18 @@
+{
+  "domain": "iris_ir_remote",
+  "name": "IRis IR Remote Integration",
+  "codeowners": [
+    "@your_github_username"
+  ],
+  "config_flow": true,
+  "dependencies": [],
+  "after_dependencies": ["mqtt"],
+  "documentation": "https://github.com/your_username/iris_ir_remote",
+  "integration_type": "device",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/your_username/iris_ir_remote/issues",
+  "requirements": [
+    "aiohttp>=3.8.0"
+  ],
+  "version": "2.2.0"
+}
